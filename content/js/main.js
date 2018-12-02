@@ -81,3 +81,74 @@ d3.csv("../data/budget.csv").then(function(rows){
 }).catch(function(error){
     console.log(error);
 })
+
+// ol
+var vectorSource = new ol.source.Vector({
+        url: '../data/Municipal_Boundaries.geojson',
+        format: new ol.format.GeoJSON()
+      });
+      var vectorLayer = new ol.layer.Vector({
+        source: vectorSource
+      });
+
+      var map = new ol.Map({
+        target: 'map',
+        layers: [
+          new ol.layer.Tile({
+            source: new ol.source.OSM()
+          }),
+          vectorLayer,
+        ],
+        view: new ol.View({
+          center: ol.proj.fromLonLat([-90.2, 38.6]),
+          zoom: 10
+        })
+      });
+      console.log(map.getView().getProjection())
+
+
+      var features;
+      var centers = {type: 'FeatureCollection', features: []};
+      var pointSource = {};
+      var pointLayer = {};
+
+      pointSource = new ol.source.Vector({});
+
+      fetch('../data/Municipal_Boundaries.geojson')
+        .then(function(r) {
+          return r.json()
+        })
+        .then(function(json) {
+          features = json;
+          console.log(features)
+
+          features.features.forEach(function(f) {
+            var center = turf.centerOfMass(f);
+            console.log(center)
+            console.log(center.geometry)
+            var feature = new ol.Feature({
+              geometry: new ol.geom.Point(center.geometry.coordinates),
+            })
+            // var feature = new ol.Feature({
+            //   center
+            // })
+            // console.log(feature)
+            feature.getGeometry().transform('EPSG:4326', 'EPSG:3857')
+            console.log(feature.getGeometry())
+            pointSource.addFeature(feature);
+            //console.log(center.getGeometry())
+            //centers.features.push(turf.centerOfMass(f))
+          })
+
+          // console.log(centers)
+          // pointSource = new ol.source.Vector({});
+
+          // pointSource.addFeatures(centers);
+          pointLayer = new ol.layer.Vector({
+            source: pointSource
+          });
+          map.addLayer(pointLayer);
+          console.log(pointSource.getFeatures())
+
+
+        })
